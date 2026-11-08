@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Put the words in the correct order</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f4f5f9;
+      --surface: #ffffff;
+      --surface-soft: #faf9f6;
+      --ink: #242532;
+      --muted: #696b78;
+      --line: #dedfe7;
+      --accent: #6f66b5;
+      --accent-dark: #554d96;
+      --accent-soft: #eeeafd;
+      --card: #fff0ad;
+      --card-border: #dfca71;
+      --card-selected: #e9e3ff;
+      --success: #2f7657;
+      --success-soft: #e3f3eb;
+      --error: #a24747;
+      --error-soft: #fbeaea;
+      --shadow: 0 18px 50px rgba(37, 39, 56, 0.09);
+      --shadow-card: 0 7px 16px rgba(76, 65, 22, 0.11);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      background: var(--page);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 6% 0%, rgba(220, 214, 249, 0.72), transparent 30rem),
+        radial-gradient(circle at 96% 8%, rgba(214, 238, 229, 0.62), transparent 28rem),
+        var(--page);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app-shell {
+      width: min(100%, 1080px);
+      margin: 0 auto;
+      padding: clamp(18px, 4vw, 46px);
+    }
+
+    .app-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent-dark);
+      font-size: 0.78rem;
+      font-weight: 750;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin: 0;
+      font-size: clamp(1.75rem, 4.5vw, 3rem);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+
+    .header-note {
+      max-width: 230px;
+      margin: 0 0 4px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: right;
+    }
+
+    .progress-panel,
+    .exercise-panel,
+    .completion-panel {
+      border: 1px solid rgba(205, 206, 217, 0.9);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .progress-panel {
+      display: grid;
+      grid-template-columns: auto minmax(140px, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 16px 20px;
+    }
+
+    .progress-label,
+    .progress-value {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .progress-value {
+      color: var(--accent-dark);
+    }
+
+    .progress-track {
+      height: 9px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e9e8ef;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #7d73c5, #7aa995);
+      transition: width 240ms ease;
+    }
+
+    .task-nav {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(44px, 1fr));
+      gap: 9px;
+      margin: 0 0 16px;
+    }
+
+    .task-tab {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.8);
+      font-weight: 750;
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .task-tab:hover {
+      border-color: #b9b3df;
+      transform: translateY(-1px);
+    }
+
+    .task-tab[aria-current="step"] {
+      border-color: var(--accent);
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .task-tab.is-complete:not([aria-current="step"]) {
+      border-color: #9fc9b7;
+      color: var(--success);
+      background: var(--success-soft);
+    }
+
+    .task-tab:focus-visible,
+    .word-card:focus-visible,
+    .button:focus-visible {
+      outline: 3px solid rgba(111, 102, 181, 0.33);
+      outline-offset: 3px;
+    }
+
+    .exercise-panel {
+      padding: clamp(22px, 4vw, 42px);
+    }
+
+    .exercise-topline {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .sentence-count {
+      margin: 0;
+      color: var(--accent-dark);
+      font-size: 0.84rem;
+      font-weight: 780;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .interaction-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.83rem;
+      text-align: right;
+    }
+
+    .instruction {
+      margin: 0 0 25px;
+      font-size: clamp(1.05rem, 2.6vw, 1.24rem);
+      font-weight: 650;
+    }
+
+    .word-area {
+      display: flex;
+      min-height: 150px;
+      margin-bottom: 20px;
+      padding: clamp(16px, 3vw, 24px);
+      flex-wrap: wrap;
+      gap: 13px;
+      align-content: center;
+      border: 1px dashed #c9c6d8;
+      border-radius: 18px;
+      background: var(--surface-soft);
+    }
+
+    .word-area.is-complete {
+      border-style: solid;
+      border-color: #a7cdbd;
+      background: #f7fcf9;
+    }
+
+    .word-card {
+      position: relative;
+      min-height: 58px;
+      padding: 13px 21px;
+      border: 1px solid var(--card-border);
+      border-radius: 13px;
+      color: #353226;
+      background: var(--card);
+      box-shadow: var(--shadow-card);
+      font-size: clamp(1rem, 2.5vw, 1.12rem);
+      font-weight: 720;
+      letter-spacing: 0.002em;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    .word-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(76, 65, 22, 0.15);
+    }
+
+    .word-card.is-selected {
+      border-color: var(--accent);
+      background: var(--card-selected);
+      box-shadow: 0 0 0 3px rgba(111, 102, 181, 0.16);
+    }
+
+    .word-card.is-dragging {
+      z-index: 10;
+      cursor: grabbing;
+      opacity: 0.94;
+      pointer-events: none;
+      box-shadow: 0 18px 32px rgba(38, 34, 66, 0.22);
+      transition: none;
+    }
+
+    .word-card:disabled {
+      cursor: default;
+      opacity: 1;
+    }
+
+    .word-area.is-complete .word-card {
+      border-color: #9bc7b3;
+      background: #e4f3eb;
+      box-shadow: none;
+    }
+
+    .feedback {
+      display: flex;
+      min-height: 52px;
+      margin-bottom: 22px;
+      padding: 12px 16px;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid transparent;
+      border-radius: 13px;
+      color: var(--muted);
+      background: #f5f5f7;
+      font-weight: 680;
+    }
+
+    .feedback::before {
+      display: grid;
+      width: 26px;
+      height: 26px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 50%;
+      content: "i";
+      color: #fff;
+      background: #a2a3ae;
+      font-family: Georgia, serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .feedback.is-success {
+      border-color: #abd1bf;
+      color: var(--success);
+      background: var(--success-soft);
+    }
+
+    .feedback.is-success::before {
+      content: "✓";
+      background: var(--success);
+      font-family: inherit;
+    }
+
+    .feedback.is-error {
+      border-color: #e8bcbc;
+      color: var(--error);
+      background: var(--error-soft);
+    }
+
+    .feedback.is-error::before {
+      content: "!";
+      background: var(--error);
+      font-family: inherit;
+    }
+
+    .controls {
+      display: flex;
+      gap: 11px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .control-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      min-height: 46px;
+      padding: 11px 19px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+    }
+
+    .button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .button:disabled {
+      cursor: not-allowed;
+      opacity: 0.46;
+    }
+
+    .button-primary {
+      min-width: 118px;
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .button-primary:hover:not(:disabled) {
+      background: var(--accent-dark);
+    }
+
+    .button-secondary {
+      border-color: var(--line);
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .button-quiet {
+      color: var(--accent-dark);
+      background: var(--accent-soft);
+    }
+
+    .completion-panel {
+      display: none;
+      margin-top: 18px;
+      padding: clamp(22px, 4vw, 34px);
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: center;
+      border-color: #a7cdbd;
+      background: linear-gradient(135deg, #f4fbf7, #f8f6ff);
+    }
+
+    .completion-panel.is-visible {
+      display: grid;
+    }
+
+    .completion-kicker {
+      margin: 0 0 4px;
+      color: var(--success);
+      font-size: 0.83rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .completion-title {
+      margin: 0 0 5px;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+    }
+
+    .completion-copy {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .privacy-note {
+      margin: 18px 4px 0;
+      color: #777986;
+      font-size: 0.78rem;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .app-shell {
+        padding: 18px 14px 28px;
+      }
+
+      .app-header {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .header-note {
+        max-width: none;
+        text-align: left;
+      }
+
+      .progress-panel {
+        grid-template-columns: 1fr auto;
+        gap: 9px 14px;
+      }
+
+      .progress-track {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+
+      .task-nav {
+        gap: 6px;
+      }
+
+      .task-tab {
+        min-height: 40px;
+        border-radius: 10px;
+      }
+
+      .exercise-panel {
+        border-radius: 18px;
+      }
+
+      .exercise-topline {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .interaction-hint {
+        text-align: left;
+      }
+
+      .word-area {
+        min-height: 180px;
+      }
+
+      .word-card {
+        min-height: 54px;
+        padding: 12px 17px;
+      }
+
+      .controls {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .control-group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .completion-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .task-nav {
+        grid-template-columns: repeat(4, minmax(44px, 1fr));
+      }
+
+      .word-area {
+        gap: 10px;
+        padding: 14px;
+      }
+
+      .control-group {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">English practice · Comparatives</p>
+        <h1>Put the words in the correct order</h1>
+      </div>
+      <p class="header-note">Seven sentences about changes in a neighbourhood.</p>
+    </header>
+
+    <section class="progress-panel" aria-label="Exercise progress">
+      <p class="progress-label">Progress</p>
+      <div class="progress-track" aria-hidden="true">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <p class="progress-value" id="progress-value">0 of 7</p>
+    </section>
+
+    <nav class="task-nav" id="task-nav" aria-label="Choose a sentence"></nav>
+
+    <section class="exercise-panel" aria-labelledby="sentence-heading">
+      <div class="exercise-topline">
+        <p class="sentence-count" id="sentence-heading">Sentence 1 of 7</p>
+        <p class="interaction-hint">Drag the cards, or tap two cards to swap them.</p>
+      </div>
+      <p class="instruction">Build a correct sentence.</p>
+
+      <div class="word-area" id="word-area" aria-label="Sentence cards"></div>
+
+      <div class="feedback" id="feedback" role="status" aria-live="polite">
+        Arrange all the cards, then select Check.
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <button class="button button-secondary" id="previous-button" type="button">Previous</button>
+          <button class="button button-secondary" id="next-button" type="button">Next</button>
+        </div>
+        <div class="control-group">
+          <button class="button button-quiet" id="reset-button" type="button">Reset</button>
+          <button class="button button-primary" id="check-button" type="button">Check</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="completion-panel" id="completion-panel" aria-live="polite">
+      <div>
+        <p class="completion-kicker">Exercise complete</p>
+        <h2 class="completion-title">Excellent work — 7 out of 7.</h2>
+        <p class="completion-copy">You completed every sentence correctly.</p>
+      </div>
+      <button class="button button-secondary" id="restart-button" type="button">Start again</button>
+    </section>
+
+    <p class="privacy-note" id="storage-note">Your answers stay in this browser. No answers or activity are sent anywhere.</p>
+  </main>
+
+  <script type="application/json" id="exercise-data">
+  [
+    {
+      "id": 1,
+      "start": ["much", "than", "is", "cheaper", "it", "before"],
+      "answer": ["it", "is", "much", "cheaper", "than", "before"]
+    },
+    {
+      "id": 2,
+      "start": ["a lot", "housing", "more expensive", "is", "than", "it used to be"],
+      "answer": ["housing", "is", "a lot", "more expensive", "than", "it used to be"]
+    },
+    {
+      "id": 3,
+      "start": ["far", "public transport", "better", "is", "than", "it was"],
+      "answer": ["public transport", "is", "far", "better", "than", "it was"]
+    },
+    {
+      "id": 4,
+      "start": ["fewer", "there are", "people", "than before", "here"],
+      "answer": ["there are", "fewer", "people", "here", "than before"]
+    },
+    {
+      "id": 5,
+      "start": ["much less", "there is", "crime", "than", "there used to be"],
+      "answer": ["there is", "much less", "crime", "than", "there used to be"]
+    },
+    {
+      "id": 6,
+      "start": ["not", "this area", "as quiet", "is", "as", "it used to be"],
+      "answer": ["this area", "is", "not", "as quiet", "as", "it used to be"]
+    },
+    {
+      "id": 7,
+      "start": ["more popular", "this neighbourhood", "than", "is", "it used to be"],
+      "answer": ["this neighbourhood", "is", "more popular", "than", "it used to be"]
+    }
+  ]
+  </script>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const exercises = JSON.parse(document.getElementById("exercise-data").textContent);
+
+      const elements = {
+        taskNav: document.getElementById("task-nav"),
+        sentenceHeading: document.getElementById("sentence-heading"),
+        wordArea: document.getElementById("word-area"),
+        feedback: document.getElementById("feedback"),
+        previousButton: document.getElementById("previous-button"),
+        nextButton: document.getElementById("next-button"),
+        resetButton: document.getElementById("reset-button"),
+        checkButton: document.getElementById("check-button"),
+        progressBar: document.getElementById("progress-bar"),
+        progressValue: document.getElementById("progress-value"),
+        completionPanel: document.getElementById("completion-panel"),
+        restartButton: document.getElementById("restart-button"),
+        storageNote: document.getElementById("storage-note")
+      };
+
+      const preparedExercises = exercises.map((exercise) => ({
+        ...exercise,
+        items: exercise.start.map((text, index) => ({
+          id: `sentence-${exercise.id}-card-${index + 1}`,
+          text
+        }))
+      }));
+
+      const state = {
+        currentIndex: 0,
+        orders: preparedExercises.map((exercise) => exercise.items.map((item) => item.id)),
+        completed: preparedExercises.map(() => false),
+        feedback: preparedExercises.map(() => null),
+        selectedCardId: null,
+        suppressClickUntil: 0
+      };
+
+      let activeDrag = null;
+
+      // Only this exercise's local progress is stored; no network requests or accounts.
+      const STORAGE_KEY = "holst-exercises:vera-word-order:v1";
+      const storage = (() => {
+        try {
+          const candidate = window.localStorage;
+          const probe = STORAGE_KEY + ":test";
+          candidate.setItem(probe, "1");
+          candidate.removeItem(probe);
+          return candidate;
+        } catch {
+          return null;
+        }
+      })();
+
+      elements.storageNote.textContent = storage
+        ? "Progress is saved in this browser when storage is available. No answers or activity are sent anywhere."
+        : "Autosave is unavailable in this view. Progress may reset after refresh. No answers are sent anywhere.";
+
+      function saveProgress() {
+        if (!storage) return;
+        try {
+          storage.setItem(STORAGE_KEY, JSON.stringify({
+            version: 1,
+            currentIndex: state.currentIndex,
+            orders: state.orders,
+            completed: state.completed
+          }));
+        } catch {
+          elements.storageNote.textContent = "Autosave is unavailable in this view. Progress may reset after refresh. No answers are sent anywhere.";
+        }
+      }
+
+      function restoreProgress() {
+        if (!storage) return;
+        let saved;
+        try {
+          saved = JSON.parse(storage.getItem(STORAGE_KEY) || "null");
+        } catch {
+          return;
+        }
+        if (!saved || saved.version !== 1 ||
+            !Number.isInteger(saved.currentIndex) ||
+            saved.currentIndex < 0 || saved.currentIndex >= preparedExercises.length ||
+            !Array.isArray(saved.orders) || saved.orders.length !== preparedExercises.length ||
+            !Array.isArray(saved.completed) || saved.completed.length !== preparedExercises.length) {
+          return;
+        }
+
+        const validOrders = saved.orders.every((order, index) =>
+          Array.isArray(order) &&
+          sameMultiset(order, preparedExercises[index].items.map((item) => item.id))
+        );
+        if (!validOrders) return;
+
+        state.orders = saved.orders.map((order) => [...order]);
+        state.completed = saved.completed.map((value, index) => {
+          if (value !== true) return false;
+          const itemMap = itemMapFor(index);
+          const sequence = state.orders[index].map((id) => itemMap.get(id).text);
+          const answer = preparedExercises[index].answer;
+          return sequence.every((word, position) => word === answer[position]);
+        });
+        state.feedback = state.completed.map((done) => done ? "success" : null);
+        state.currentIndex = saved.currentIndex;
+      }
+
+      function countValues(values) {
+        return values.reduce((counts, value) => {
+          counts.set(value, (counts.get(value) || 0) + 1);
+          return counts;
+        }, new Map());
+      }
+
+      function sameMultiset(left, right) {
+        if (left.length !== right.length) return false;
+        const leftCounts = countValues(left);
+        const rightCounts = countValues(right);
+        if (leftCounts.size !== rightCounts.size) return false;
+        for (const [value, count] of leftCounts) {
+          if (rightCounts.get(value) !== count) return false;
+        }
+        return true;
+      }
+
+      function validateExerciseData() {
+        if (preparedExercises.length !== 7) {
+          throw new Error("The exercise must contain exactly seven sentences.");
+        }
+
+        for (const exercise of preparedExercises) {
+          if (!sameMultiset(exercise.start, exercise.answer)) {
+            throw new Error(`Sentence ${exercise.id} has mismatched cards and answer data.`);
+          }
+          if (exercise.start.every((value, index) => value === exercise.answer[index])) {
+            throw new Error(`Sentence ${exercise.id} is not scrambled.`);
+          }
+        }
+      }
+
+      function itemMapFor(index) {
+        return new Map(preparedExercises[index].items.map((item) => [item.id, item]));
+      }
+
+      function orderedTextFor(index) {
+        const itemMap = itemMapFor(index);
+        return state.orders[index].map((id) => itemMap.get(id).text);
+      }
+
+      function isCurrentAnswerCorrect() {
+        const current = orderedTextFor(state.currentIndex);
+        const answer = preparedExercises[state.currentIndex].answer;
+        return current.length === answer.length && current.every((value, index) => value === answer[index]);
+      }
+
+      function completedCount() {
+        return state.completed.filter(Boolean).length;
+      }
+
+      function setFeedback(kind) {
+        const feedback = elements.feedback;
+        feedback.className = "feedback";
+
+        if (kind === "success") {
+          feedback.classList.add("is-success");
+          feedback.textContent = "Correct. Well done!";
+          return;
+        }
+
+        if (kind === "error") {
+          feedback.classList.add("is-error");
+          feedback.textContent = "Try again. The sentence is not in the correct order yet.";
+          return;
+        }
+
+        if (state.selectedCardId) {
+          feedback.textContent = "Now select a second card to swap their positions.";
+          return;
+        }
+
+        feedback.textContent = "Arrange all the cards, then select Check.";
+      }
+
+      function renderProgress() {
+        const count = completedCount();
+        const percentage = (count / preparedExercises.length) * 100;
+        elements.progressBar.style.width = `${percentage}%`;
+        elements.progressValue.textContent = `${count} of ${preparedExercises.length}`;
+        elements.progressPanel = elements.progressBar.closest(".progress-panel");
+        elements.progressPanel.setAttribute("aria-label", `Exercise progress: ${count} of ${preparedExercises.length} complete`);
+        elements.completionPanel.classList.toggle("is-visible", count === preparedExercises.length);
+      }
+
+      function renderNavigation() {
+        elements.taskNav.textContent = "";
+
+        preparedExercises.forEach((exercise, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "task-tab";
+          button.textContent = String(exercise.id);
+          button.setAttribute("aria-label", `Sentence ${exercise.id}${state.completed[index] ? ", complete" : ""}`);
+          if (index === state.currentIndex) button.setAttribute("aria-current", "step");
+          if (state.completed[index]) button.classList.add("is-complete");
+          button.addEventListener("click", () => switchSentence(index));
+          elements.taskNav.appendChild(button);
+        });
+      }
+
+      function createCard(item, index, isComplete) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "word-card";
+        card.textContent = item.text;
+        card.dataset.cardId = item.id;
+        card.dataset.index = String(index);
+        card.disabled = isComplete;
+        card.setAttribute("aria-label", `${item.text}. Card ${index + 1} of ${state.orders[state.currentIndex].length}`);
+        card.setAttribute("aria-pressed", String(state.selectedCardId === item.id));
+        if (state.selectedCardId === item.id) card.classList.add("is-selected");
+
+        card.addEventListener("click", () => {
+          if (Date.now() < state.suppressClickUntil || isComplete) return;
+          handleCardSelection(item.id);
+        });
+
+        card.addEventListener("keydown", (event) => {
+          if (isComplete) return;
+          if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+            event.preventDefault();
+            const delta = event.key === "ArrowLeft" ? -1 : 1;
+            moveCardByKeyboard(item.id, delta);
+          } else if (event.key === "Escape") {
+            state.selectedCardId = null;
+            renderExercise();
+          }
+        });
+
+        card.addEventListener("pointerdown", startPointerDrag);
+        card.addEventListener("pointermove", continuePointerDrag);
+        card.addEventListener("pointerup", endPointerDrag);
+        card.addEventListener("pointercancel", cancelPointerDrag);
+
+        return card;
+      }
+
+      function renderCards(focusCardId = null) {
+        const exercise = preparedExercises[state.currentIndex];
+        const itemMap = itemMapFor(state.currentIndex);
+        const isComplete = state.completed[state.currentIndex];
+        elements.wordArea.textContent = "";
+        elements.wordArea.classList.toggle("is-complete", isComplete);
+
+        state.orders[state.currentIndex].forEach((id, index) => {
+          elements.wordArea.appendChild(createCard(itemMap.get(id), index, isComplete));
+        });
+
+        if (focusCardId) {
+          const focusTarget = Array.from(elements.wordArea.children).find(
+            (card) => card.dataset.cardId === focusCardId
+          );
+          if (focusTarget) focusTarget.focus();
+        }
+      }
+
+      function renderExercise(focusCardId = null) {
+        const number = state.currentIndex + 1;
+        const isComplete = state.completed[state.currentIndex];
+        elements.sentenceHeading.textContent = `Sentence ${number} of ${preparedExercises.length}`;
+        elements.previousButton.disabled = state.currentIndex === 0;
+        elements.nextButton.disabled = state.currentIndex === preparedExercises.length - 1;
+        elements.checkButton.disabled = isComplete;
+        elements.resetButton.disabled = false;
+        renderCards(focusCardId);
+        renderNavigation();
+        renderProgress();
+        setFeedback(state.feedback[state.currentIndex]);
+        saveProgress();
+      }
+
+      function switchSentence(index) {
+        if (index < 0 || index >= preparedExercises.length || index === state.currentIndex) return;
+        state.currentIndex = index;
+        state.selectedCardId = null;
+        activeDrag = null;
+        renderExercise();
+      }
+
+      function handleCardSelection(cardId) {
+        if (!state.selectedCardId) {
+          state.selectedCardId = cardId;
+          state.feedback[state.currentIndex] = null;
+          renderExercise(cardId);
+          return;
+        }
+
+        if (state.selectedCardId === cardId) {
+          state.selectedCardId = null;
+          renderExercise(cardId);
+          return;
+        }
+
+        const order = state.orders[state.currentIndex];
+        const firstIndex = order.indexOf(state.selectedCardId);
+        const secondIndex = order.indexOf(cardId);
+        [order[firstIndex], order[secondIndex]] = [order[secondIndex], order[firstIndex]];
+        state.selectedCardId = null;
+        state.feedback[state.currentIndex] = null;
+        renderExercise(cardId);
+      }
+
+      function moveCardByKeyboard(cardId, delta) {
+        const order = state.orders[state.currentIndex];
+        const currentIndex = order.indexOf(cardId);
+        const targetIndex = currentIndex + delta;
+        if (targetIndex < 0 || targetIndex >= order.length) return;
+        [order[currentIndex], order[targetIndex]] = [order[targetIndex], order[currentIndex]];
+        state.selectedCardId = null;
+        state.feedback[state.currentIndex] = null;
+        renderExercise(cardId);
+      }
+
+      function startPointerDrag(event) {
+        if (event.currentTarget.disabled || (event.pointerType === "mouse" && event.button !== 0)) return;
+        activeDrag = {
+          pointerId: event.pointerId,
+          card: event.currentTarget,
+          startX: event.clientX,
+          startY: event.clientY,
+          dragging: false
+        };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+
+      function continuePointerDrag(event) {
+        if (!activeDrag || activeDrag.pointerId !== event.pointerId || activeDrag.card !== event.currentTarget) return;
+        const deltaX = event.clientX - activeDrag.startX;
+        const deltaY = event.clientY - activeDrag.startY;
+
+        if (!activeDrag.dragging && Math.hypot(deltaX, deltaY) > 7) {
+          activeDrag.dragging = true;
+          state.selectedCardId = null;
+          activeDrag.card.classList.add("is-dragging");
+        }
+
+        if (!activeDrag.dragging) return;
+        event.preventDefault();
+        activeDrag.card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".word-card");
+        if (!target || target === activeDrag.card || target.parentElement !== elements.wordArea) return;
+        const targetRect = target.getBoundingClientRect();
+        const placeAfter = event.clientX > targetRect.left + targetRect.width / 2;
+        elements.wordArea.insertBefore(activeDrag.card, placeAfter ? target.nextSibling : target);
+      }
+
+      function syncOrderFromDom() {
+        state.orders[state.currentIndex] = Array.from(elements.wordArea.querySelectorAll(".word-card"))
+          .map((card) => card.dataset.cardId);
+      }
+
+      function finishPointerDrag(event, cancelled) {
+        if (!activeDrag || activeDrag.pointerId !== event.pointerId || activeDrag.card !== event.currentTarget) return;
+        const { card, dragging } = activeDrag;
+        if (card.hasPointerCapture(event.pointerId)) card.releasePointerCapture(event.pointerId);
+        card.classList.remove("is-dragging");
+        card.style.transform = "";
+        activeDrag = null;
+
+        if (dragging) {
+          state.suppressClickUntil = Date.now() + 450;
+          if (!cancelled) {
+            syncOrderFromDom();
+            state.feedback[state.currentIndex] = null;
+          }
+          renderExercise(card.dataset.cardId);
+        }
+      }
+
+      function endPointerDrag(event) {
+        finishPointerDrag(event, false);
+      }
+
+      function cancelPointerDrag(event) {
+        finishPointerDrag(event, true);
+      }
+
+      function checkAnswer() {
+        const index = state.currentIndex;
+        state.selectedCardId = null;
+
+        if (isCurrentAnswerCorrect()) {
+          state.completed[index] = true;
+          state.feedback[index] = "success";
+          renderExercise();
+          if (completedCount() === preparedExercises.length) {
+            elements.completionPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+          return;
+        }
+
+        state.feedback[index] = "error";
+        renderExercise();
+      }
+
+      function resetSentence(index) {
+        state.orders[index] = preparedExercises[index].items.map((item) => item.id);
+        state.completed[index] = false;
+        state.feedback[index] = null;
+        state.selectedCardId = null;
+      }
+
+      function resetAll() {
+        preparedExercises.forEach((_, index) => resetSentence(index));
+        state.currentIndex = 0;
+        renderExercise();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      elements.previousButton.addEventListener("click", () => switchSentence(state.currentIndex - 1));
+      elements.nextButton.addEventListener("click", () => switchSentence(state.currentIndex + 1));
+      elements.resetButton.addEventListener("click", () => {
+        resetSentence(state.currentIndex);
+        renderExercise();
+      });
+      elements.checkButton.addEventListener("click", checkAnswer);
+      elements.restartButton.addEventListener("click", resetAll);
+
+      validateExerciseData();
+      restoreProgress();
+      renderExercise();
+
+      window.__wordOrderExerciseTest = Object.freeze({
+        exerciseCount: preparedExercises.length,
+        answers: preparedExercises.map((exercise) => [...exercise.answer]),
+        isCorrect(order, index) {
+          const answer = preparedExercises[index].answer;
+          return order.length === answer.length && order.every((value, itemIndex) => value === answer[itemIndex]);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
