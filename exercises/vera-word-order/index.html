@@ -586,7 +586,7 @@
       <button class="button button-secondary" id="restart-button" type="button">Start again</button>
     </section>
 
-    <p class="privacy-note">This exercise works entirely in your browser. No answers or activity are sent anywhere.</p>
+    <p class="privacy-note" id="storage-note">Your answers stay in this browser. No answers or activity are sent anywhere.</p>
   </main>
 
   <script type="application/json" id="exercise-data">
@@ -647,7 +647,8 @@
         progressBar: document.getElementById("progress-bar"),
         progressValue: document.getElementById("progress-value"),
         completionPanel: document.getElementById("completion-panel"),
-        restartButton: document.getElementById("restart-button")
+        restartButton: document.getElementById("restart-button"),
+        storageNote: document.getElementById("storage-note")
       };
 
       const preparedExercises = exercises.map((exercise) => ({
@@ -668,6 +669,72 @@
       };
 
       let activeDrag = null;
+
+      // Only this exercise's local progress is stored; no network requests or accounts.
+      const STORAGE_KEY = "holst-exercises:vera-word-order:v1";
+      const storage = (() => {
+        try {
+          const candidate = window.localStorage;
+          const probe = STORAGE_KEY + ":test";
+          candidate.setItem(probe, "1");
+          candidate.removeItem(probe);
+          return candidate;
+        } catch {
+          return null;
+        }
+      })();
+
+      elements.storageNote.textContent = storage
+        ? "Progress is saved in this browser when storage is available. No answers or activity are sent anywhere."
+        : "Autosave is unavailable in this view. Progress may reset after refresh. No answers are sent anywhere.";
+
+      function saveProgress() {
+        if (!storage) return;
+        try {
+          storage.setItem(STORAGE_KEY, JSON.stringify({
+            version: 1,
+            currentIndex: state.currentIndex,
+            orders: state.orders,
+            completed: state.completed
+          }));
+        } catch {
+          elements.storageNote.textContent = "Autosave is unavailable in this view. Progress may reset after refresh. No answers are sent anywhere.";
+        }
+      }
+
+      function restoreProgress() {
+        if (!storage) return;
+        let saved;
+        try {
+          saved = JSON.parse(storage.getItem(STORAGE_KEY) || "null");
+        } catch {
+          return;
+        }
+        if (!saved || saved.version !== 1 ||
+            !Number.isInteger(saved.currentIndex) ||
+            saved.currentIndex < 0 || saved.currentIndex >= preparedExercises.length ||
+            !Array.isArray(saved.orders) || saved.orders.length !== preparedExercises.length ||
+            !Array.isArray(saved.completed) || saved.completed.length !== preparedExercises.length) {
+          return;
+        }
+
+        const validOrders = saved.orders.every((order, index) =>
+          Array.isArray(order) &&
+          sameMultiset(order, preparedExercises[index].items.map((item) => item.id))
+        );
+        if (!validOrders) return;
+
+        state.orders = saved.orders.map((order) => [...order]);
+        state.completed = saved.completed.map((value, index) => {
+          if (value !== true) return false;
+          const itemMap = itemMapFor(index);
+          const sequence = state.orders[index].map((id) => itemMap.get(id).text);
+          const answer = preparedExercises[index].answer;
+          return sequence.every((word, position) => word === answer[position]);
+        });
+        state.feedback = state.completed.map((done) => done ? "success" : null);
+        state.currentIndex = saved.currentIndex;
+      }
 
       function countValues(values) {
         return values.reduce((counts, value) => {
@@ -839,6 +906,7 @@
         renderNavigation();
         renderProgress();
         setFeedback(state.feedback[state.currentIndex]);
+        saveProgress();
       }
 
       function switchSentence(index) {
@@ -990,6 +1058,7 @@
       elements.restartButton.addEventListener("click", resetAll);
 
       validateExerciseData();
+      restoreProgress();
       renderExercise();
 
       window.__wordOrderExerciseTest = Object.freeze({
